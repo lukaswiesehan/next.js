@@ -170,6 +170,7 @@ export interface RenderOptsPartial {
      */
     isRoutePPREnabled?: boolean
     swrDelta: SwrDelta | undefined
+    after: boolean
   }
   postponed?: string
   /**

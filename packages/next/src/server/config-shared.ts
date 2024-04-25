@@ -446,6 +446,11 @@ export interface ExperimentalConfig {
    *
    */
   serverComponentsExternalPackages?: string[]
+
+  /**
+   * Enables `unstable_after`
+   */
+  after?: boolean
 }
 
 export type ExportPathMap = {
@@ -938,6 +943,7 @@ export const defaultConfig: NextConfig = {
       static: 300,
     },
     allowDevelopmentBuild: undefined,
+    after: false,
   },
   bundlePagesRouterDependencies: false,
 }
