@@ -67,37 +67,6 @@ describe('unstable_after()', () => {
     // TODO: server seems to close before the response fully returns?
   })
 
-  it('is a no-op with `dynamic = "force-static"`', async () => {
-    const res = await next.fetch('/static')
-    expect(res.status).toBe(200)
-    expect(getLogs()).toHaveLength(0)
-  })
-
-  if (isNextDev) {
-    it('errors at compile time with `dynamic = "error"`', async () => {
-      const filePath = 'app/static/page.js'
-      const origContent = await next.readFile(filePath)
-
-      try {
-        await next.patchFile(filePath, (contents) =>
-          contents.replace(
-            `export const dynamic = 'force-static'`,
-            `export const dynamic = 'error'`
-          )
-        )
-        const browser = await next.browser('/static')
-
-        expect(await hasRedbox(browser)).toBe(true)
-        expect(await getRedboxDescription(browser)).toContain(
-          'Route /static with `dynamic = "error"` couldn\'t be rendered statically because it used `unstable_after`'
-        )
-        expect(getLogs()).toHaveLength(0)
-      } finally {
-        await next.patchFile(filePath, origContent)
-      }
-    })
-  }
-
   describe('interrupted RSC renders', () => {
     it('runs callbacks if redirect() was called', async () => {
       await next.browser('/interrupted/calls-redirect')
@@ -250,9 +219,36 @@ describe('unstable_after()', () => {
   })
 
   if (isNextDev) {
-    // TODO: these are at the end because they destroy the next server.
-    // is there a cleaner way to do this without making the tests slower?
     describe('invalid usages', () => {
+      it.each(['error', 'force-static'])(
+        'errors at compile time with `dynamic = "%s"`',
+        async (dynamicValue) => {
+          const filePath = 'app/static/page.js'
+          const origContent = await next.readFile(filePath)
+
+          try {
+            await next.patchFile(filePath, (contents) =>
+              contents.replace(
+                `// export const dynamic = 'REPLACE_ME'`,
+                `export const dynamic = '${dynamicValue}'`
+              )
+            )
+            const browser = await next.browser('/static')
+
+            expect(await hasRedbox(browser)).toBe(true)
+            expect(await getRedboxDescription(browser)).toContain(
+              `Route /static with \`dynamic = "${dynamicValue}"\` couldn't be rendered statically because it used \`unstable_after\``
+            )
+            expect(getLogs()).toHaveLength(0)
+          } finally {
+            await next.patchFile(filePath, origContent)
+          }
+        }
+      )
+
+      // TODO: these are at the end because they destroy the next server.
+      // is there a cleaner way to do this without making the tests slower?
+
       it('errors at compile time when used in a client module', async () => {
         const { session, cleanup } = await sandbox(
           next,

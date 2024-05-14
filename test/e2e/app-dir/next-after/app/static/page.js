@@ -1,7 +1,8 @@
 import { unstable_after as after } from 'next/server'
 import { persistentLog } from '../../utils/log'
 
-export const dynamic = 'force-static'
+// (patched in tests)
+// export const dynamic = 'REPLACE_ME'
 
 export default function Index() {
   after(async () => {

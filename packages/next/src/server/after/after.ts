@@ -1,5 +1,7 @@
 import { getExpectedRequestStore } from '../../client/components/request-async-storage.external'
 import { staticGenerationAsyncStorage } from '../../client/components/static-generation-async-storage.external'
+import { StaticGenBailoutError } from '../../client/components/static-generation-bailout'
+import { getPathname } from '../../lib/url'
 
 import { markCurrentScopeAsDynamic } from '../app-render/dynamic-rendering'
 import type { AfterTask } from './shared'
@@ -23,8 +25,10 @@ export function unstable_after<T>(task: AfterTask<T>) {
 
   if (staticGenerationStore) {
     if (staticGenerationStore.forceStatic) {
-      // When we are forcing static, after() is a no-op
-      return
+      const pathname = getPathname(staticGenerationStore.urlPathname)
+      throw new StaticGenBailoutError(
+        `Route ${pathname} with \`dynamic = "force-static"\` couldn't be rendered statically because it used \`${callingExpression}\`. See more info here: https://nextjs.org/docs/app/building-your-application/rendering/static-and-dynamic#dynamic-rendering`
+      )
     } else {
       markCurrentScopeAsDynamic(staticGenerationStore, callingExpression)
     }
